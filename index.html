@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>March 2026 Sales Report — Faya Corporation</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green-dark: #0d5c32;
+    --green-mid: #1a8c4e;
+    --green-light: #e6f4ec;
+    --amber: #e07b10;
+    --amber-light: #fef3e2;
+    --red: #c0392b;
+    --red-light: #fdecea;
+    --blue: #1a5fa8;
+    --blue-light: #e8f1fb;
+    --ink: #1a1f1a;
+    --ink-mid: #4a5249;
+    --ink-soft: #8a9688;
+    --border: #dde8d8;
+    --surface: #f7faf6;
+    --white: #ffffff;
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+
+  html { scroll-behavior: smooth; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--ink); min-height: 100vh; }
+
+  .page-header { background: var(--green-dark); padding: 2rem 2.5rem 1.75rem; position: relative; overflow: hidden; }
+  .page-header::after { content: ''; position: absolute; right: -60px; top: -60px; width: 280px; height: 280px; border-radius: 50%; border: 40px solid rgba(255,255,255,0.04); }
+  .page-header::before { content: ''; position: absolute; right: 80px; bottom: -80px; width: 200px; height: 200px; border-radius: 50%; border: 30px solid rgba(255,255,255,0.04); }
+  .header-inner { max-width: 980px; margin: 0 auto; position: relative; z-index: 1; }
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
+  .brand { font-family: 'DM Serif Display', serif; font-size: 13px; color: rgba(255,255,255,0.55); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; }
+  .report-title { font-family: 'DM Serif Display', serif; font-size: 32px; color: #fff; font-weight: 400; line-height: 1.15; }
+  .report-subtitle { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 6px; }
+  .header-badges { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+  .header-badge { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 0.6rem 1rem; text-align: right; }
+  .header-badge .badge-label { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.08em; }
+  .header-badge .badge-val { font-size: 20px; font-weight: 500; color: #fff; margin-top: 2px; }
+  .header-badge .badge-sub { font-size: 12px; color: #ff8a8a; margin-top: 2px; }
+  .badge-sub-neu { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+
+  .tab-nav { background: var(--white); border-bottom: 1px solid var(--border); }
+  .tab-nav-inner { max-width: 980px; margin: 0 auto; display: flex; padding: 0 2.5rem; overflow-x: auto; }
+  .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; padding: 0.85rem 1.25rem; font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--ink-soft); cursor: pointer; font-weight: 500; transition: color 0.15s, border-color 0.15s; white-space: nowrap; }
+  .tab-btn:hover { color: var(--ink); }
+  .tab-btn.active { color: var(--green-dark); border-bottom-color: var(--green-dark); }
+
+  .page-body { max-width: 980px; margin: 0 auto; padding: 2rem 2.5rem; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .metric-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 10px; margin-bottom: 2rem; }
+  .metric-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; transition: transform 0.15s; }
+  .metric-card:hover { transform: translateY(-2px); }
+  .mc-label { font-size: 11px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .mc-val { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--ink); line-height: 1; }
+  .mc-delta { font-size: 12px; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+  .mc-delta.down { color: var(--red); }
+  .mc-delta.up { color: var(--green-mid); }
+  .mc-delta.neu { color: var(--ink-soft); }
+
+  .sec-head { font-size: 12px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+
+  .charts-row { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(0,1fr); gap: 16px; margin-bottom: 2rem; }
+  .charts-row-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; margin-bottom: 2rem; }
+  .chart-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; }
+  .chart-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+  .chart-sub { font-size: 12px; color: var(--ink-soft); margin-bottom: 1rem; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
+  .legend-row span { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink-mid); }
+  .lsq { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex-shrink: 0; }
+  .lcirc { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+  .csr-section { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 2rem; }
+  .csr-item { display: grid; grid-template-columns: 70px 1fr 85px 70px; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--surface); }
+  .csr-item:last-child { border-bottom: none; }
+  .csr-name { font-size: 13px; font-weight: 500; color: var(--ink); }
+  .csr-bar-bg { background: var(--surface); border-radius: 4px; height: 8px; overflow: hidden; }
+  .csr-bar-fill { height: 8px; border-radius: 4px; }
+  .csr-amt { font-size: 12px; color: var(--ink-mid); text-align: right; font-variant-numeric: tabular-nums; }
+  .csr-badge { font-size: 11px; padding: 2px 7px; border-radius: 5px; text-align: center; }
+
+  .store-section { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 2rem; }
+  .store-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .store-table th { font-size: 11px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.07em; padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+  .store-table td { padding: 10px 10px; border-bottom: 1px solid var(--surface); color: var(--ink); }
+  .store-table tr:last-child td { border-bottom: none; }
+  .store-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+  .pill-green { background: var(--green-light); color: var(--green-dark); }
+  .pill-amber { background: var(--amber-light); color: var(--amber); }
+  .pill-red { background: var(--red-light); color: var(--red); }
+  .pill-blue { background: var(--blue-light); color: var(--blue); }
+
+  .yoy-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; margin-bottom: 2rem; }
+  .yoy-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; }
+  .yoy-year { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--ink); margin-bottom: 4px; }
+  .yoy-divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+  .yoy-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; color: var(--ink-mid); }
+  .yoy-row span:last-child { font-weight: 500; color: var(--ink); }
+  .yoy-highlight { background: var(--green-light); border-radius: 8px; padding: 0.75rem 1rem; margin-top: 10px; }
+  .yoy-highlight-bad { background: var(--red-light); border-radius: 8px; padding: 0.75rem 1rem; margin-top: 10px; }
+  .yoy-h-label { font-size: 11px; font-weight: 600; color: var(--green-dark); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+  .yoy-h-label-bad { font-size: 11px; font-weight: 600; color: var(--red); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+  .yoy-h-val { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--green-dark); }
+  .yoy-h-val-bad { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--red); }
+
+  .aov-insight { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; }
+  .aov-cell { text-align: center; padding: 0.75rem; }
+  .aov-label { font-size: 11px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+  .aov-val { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--ink); }
+  .aov-sub { font-size: 12px; margin-top: 6px; }
+
+  .page-footer { background: var(--white); border-top: 1px solid var(--border); padding: 1.25rem 2.5rem; margin-top: 1rem; }
+  .page-footer-inner { max-width: 980px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .footer-sig { font-size: 13px; color: var(--ink-mid); }
+  .footer-sig strong { color: var(--ink); }
+  .footer-date { font-size: 12px; color: var(--ink-soft); }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .metric-card { animation: fadeUp 0.4s ease both; }
+  .metric-card:nth-child(1) { animation-delay: 0.05s; }
+  .metric-card:nth-child(2) { animation-delay: 0.10s; }
+  .metric-card:nth-child(3) { animation-delay: 0.15s; }
+  .metric-card:nth-child(4) { animation-delay: 0.20s; }
+  .metric-card:nth-child(5) { animation-delay: 0.25s; }
+
+  @media (max-width: 720px) {
+    .page-header { padding: 1.5rem; }
+    .report-title { font-size: 24px; }
+    .page-body { padding: 1.25rem 1rem; }
+    .metric-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .charts-row, .charts-row-3, .yoy-grid, .aov-insight { grid-template-columns: 1fr; }
+    .csr-item { grid-template-columns: 60px 1fr 70px; }
+    .csr-badge { display: none; }
+    .tab-nav-inner { padding: 0 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div>
+        <div class="brand">Faya Corporation</div>
+        <div class="report-title">March 2026<br>Sales Report</div>
+        <div class="report-subtitle">Prepared by Ryan Soto &middot; Assistant Manager, Sales</div>
+      </div>
+      <div class="header-badges">
+        <div class="header-badge">
+          <div class="badge-label">Total revenue</div>
+          <div class="badge-val">$150,673</div>
+          <div class="badge-sub">&#9660; -25.7% vs Mar 2025</div>
+        </div>
+        <div class="header-badge">
+          <div class="badge-label">Conversion rate</div>
+          <div class="badge-val">40.00%</div>
+          <div class="badge-sub">&#9660; -5.5pp vs Mar 2025</div>
+        </div>
+        <div class="header-badge">
+          <div class="badge-label">Avg order value</div>
+          <div class="badge-val">$984.79</div>
+          <div class="badge-sub">&#9660; -$55.47 vs Mar 2025</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" onclick="switchTab('overview', this)">Overview</button>
+    <button class="tab-btn" onclick="switchTab('csr', this)">CSR Performance</button>
+    <button class="tab-btn" onclick="switchTab('stores', this)">Stores</button>
+    <button class="tab-btn" onclick="switchTab('yoy', this)">Year-over-Year</button>
+  </div>
+</nav>
+
+<main class="page-body">
+
+  <!-- OVERVIEW -->
+  <section class="tab-panel active" id="tab-overview">
+    <div class="metric-grid">
+      <div class="metric-card">
+        <div class="mc-label">Total revenue</div>
+        <div class="mc-val">$150,673</div>
+        <div class="mc-delta down">&#9660; $52,179 vs Mar '25</div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-label">Conversion rate</div>
+        <div class="mc-val">40.00%</div>
+        <div class="mc-delta down">&#9660; 5.5pp vs Mar '25</div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-label">Orders converted</div>
+        <div class="mc-val">153</div>
+        <div class="mc-delta down">&#9660; 42 fewer vs Mar '25</div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-label">Total quotes</div>
+        <div class="mc-val">380</div>
+        <div class="mc-delta down">&#9660; 48 fewer vs Mar '25</div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-label">Avg order value</div>
+        <div class="mc-val">$984.79</div>
+        <div class="mc-delta down">&#9660; $55.47 vs Mar '25</div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">Revenue trend</div>
+        <div class="chart-sub">5-period view including March 2025 benchmark</div>
+        <div class="legend-row">
+          <span><span class="lsq" style="background:#d3d1c7;"></span>Mar 2025</span>
+          <span><span class="lsq" style="background:#9ec9f5;"></span>2026 months</span>
+          <span><span class="lsq" style="background:#0d5c32;"></span>March 2026</span>
+        </div>
+        <div style="position:relative; height:220px;">
+          <canvas id="revChart" role="img" aria-label="Revenue bar chart">Revenue trend.</canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Conversion rate trend</div>
+        <div class="chart-sub">Available periods</div>
+        <div class="legend-row">
+          <span><span class="lcirc" style="background:#1a8c4e;"></span>Conversion %</span>
+        </div>
+        <div style="position:relative; height:220px;">
+          <canvas id="convChart" role="img" aria-label="Conversion rate line chart">Conversion trend.</canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-row-3">
+      <div class="chart-card">
+        <div class="chart-title">Avg order value trend</div>
+        <div class="chart-sub">Mar 2025 vs Mar 2026</div>
+        <div style="position:relative; height:180px; margin-top:0.5rem;">
+          <canvas id="aovBar" role="img" aria-label="Average order value comparison">AOV chart.</canvas>
+        </div>
+      </div>
+      <div class="chart-card" style="grid-column: span 2;">
+        <div class="chart-title">2026 monthly revenue</div>
+        <div class="chart-sub">January through March</div>
+        <div style="position:relative; height:180px; margin-top:0.5rem;">
+          <canvas id="sparkChart" role="img" aria-label="2026 monthly revenue">2026 monthly data.</canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CSR -->
+  <section class="tab-panel" id="tab-csr">
+    <div class="metric-grid" style="grid-template-columns: repeat(3, minmax(0,1fr));">
+      <div class="metric-card">
+        <div class="mc-label">Top performer</div>
+        <div class="mc-val" style="font-size:20px;">Harris</div>
+        <div class="mc-delta up">&#9650; $45,107 revenue</div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-label">Best conversion</div>
+        <div class="mc-val" style="font-size:20px;">48.19%</div>
+        <div class="mc-delta neu">Evan &amp; Andie</div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-label">Avg Q score</div>
+        <div class="mc-val" style="font-size:20px;">93.5</div>
+        <div class="mc-delta neu">3 CSRs scored</div>
+      </div>
+    </div>
+
+    <div class="csr-section">
+      <div class="sec-head">CSR revenue breakdown — March 2026</div>
+      <div id="csrBars"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">CSR revenue distribution</div>
+      <div class="chart-sub">Share of total $150,673</div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; align-items:center; margin-top:0.5rem;">
+        <div style="position:relative; height:220px;">
+          <canvas id="csrDoughnut" role="img" aria-label="CSR revenue share doughnut">CSR share.</canvas>
+        </div>
+        <div id="csrLegend" style="font-size:12px; display:flex; flex-direction:column; gap:7px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STORES -->
+  <section class="tab-panel" id="tab-stores">
+    <div class="metric-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));">
+      <div class="metric-card">
+        <div class="mc-label">Best conversion</div>
+        <div class="mc-val" style="font-size:22px;">FP</div>
+        <div class="mc-delta up">&#9650; 66.67%</div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-label">Highest volume</div>
+        <div class="mc-val" style="font-size:22px;">CB</div>
+        <div class="mc-delta neu">217 quotes</div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-label">Needs attention</div>
+        <div class="mc-val" style="font-size:22px;">YA</div>
+        <div class="mc-delta down">&#9660; 17.39%</div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-label">Total stores</div>
+        <div class="mc-val" style="font-size:22px;">4</div>
+        <div class="mc-delta neu">380 total quotes</div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">Quotes vs orders by store</div>
+        <div class="chart-sub">March 2026</div>
+        <div class="legend-row">
+          <span><span class="lsq" style="background:#9ec9f5;"></span>Quotes</span>
+          <span><span class="lsq" style="background:#0d5c32;"></span>Orders</span>
+        </div>
+        <div style="position:relative; height:220px;">
+          <canvas id="storeBar" role="img" aria-label="Quotes vs orders by store">Store bar chart.</canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Conversion rate by store</div>
+        <div class="chart-sub">Overall avg: 40.00%</div>
+        <div style="position:relative; height:220px; margin-top:1rem;">
+          <canvas id="storeConv" role="img" aria-label="Conversion by store">Store conversion.</canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="store-section">
+      <div class="sec-head">Detailed store breakdown — March 2026</div>
+      <table class="store-table">
+        <thead>
+          <tr>
+            <th>Store</th>
+            <th class="num">Quotes</th>
+            <th class="num">Orders</th>
+            <th class="num">Conversion</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:500;">FP</td><td class="num">24</td><td class="num">16</td><td class="num"><strong>66.67%</strong></td><td><span class="pill pill-green">Excellent</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;">CB</td><td class="num">217</td><td class="num">103</td><td class="num">47.47%</td><td><span class="pill pill-blue">Good</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;">SB</td><td class="num">110</td><td class="num">39</td><td class="num">35.45%</td><td><span class="pill pill-amber">Below avg</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:500;">YA</td><td class="num">23</td><td class="num">4</td><td class="num">17.39%</td><td><span class="pill pill-red">Needs focus</span></td>
+          </tr>
+          <tr style="background:var(--surface); font-weight:500;">
+            <td>Overall</td><td class="num">380</td><td class="num">153</td><td class="num">40.00%</td><td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- YOY -->
+  <section class="tab-panel" id="tab-yoy">
+
+    <div class="aov-insight">
+      <div class="aov-cell">
+        <div class="aov-label">AOV — Mar 2025</div>
+        <div class="aov-val">$1,040.27</div>
+        <div class="aov-sub neu" style="color:var(--ink-soft);">195 orders</div>
+      </div>
+      <div class="aov-cell" style="border-left:1px solid var(--border); border-right:1px solid var(--border);">
+        <div class="aov-label">AOV — Mar 2026</div>
+        <div class="aov-val">$984.79</div>
+        <div class="aov-sub" style="color:var(--red);">153 orders</div>
+      </div>
+      <div class="aov-cell">
+        <div class="aov-label">AOV change</div>
+        <div class="aov-val" style="color:var(--red);">-$55.47</div>
+        <div class="aov-sub" style="color:var(--red);">&#9660; -5.33% YoY</div>
+      </div>
+    </div>
+
+    <div class="yoy-grid">
+      <div class="yoy-card">
+        <div class="yoy-year">March 2025</div>
+        <div style="font-size:12px; color:var(--ink-soft); margin-bottom:8px;">Prior year benchmark</div>
+        <hr class="yoy-divider">
+        <div class="yoy-row"><span>Revenue</span><span>$202,851.84</span></div>
+        <div class="yoy-row"><span>Total quotes</span><span>428</span></div>
+        <div class="yoy-row"><span>Orders converted</span><span>195</span></div>
+        <div class="yoy-row"><span>Conversion rate</span><span>45.50%</span></div>
+        <div class="yoy-row"><span>Avg order value</span><span>$1,040.27</span></div>
+        <div class="yoy-row"><span>Top CSR</span><span>Hash — $62,645</span></div>
+        <div class="yoy-row"><span>Best store</span><span>FP — 75.00%</span></div>
+        <div class="yoy-highlight">
+          <div class="yoy-h-label">Total revenue</div>
+          <div class="yoy-h-val">$202,852</div>
+        </div>
+      </div>
+      <div class="yoy-card">
+        <div class="yoy-year">March 2026</div>
+        <div style="font-size:12px; color:var(--ink-soft); margin-bottom:8px;">Current period</div>
+        <hr class="yoy-divider">
+        <div class="yoy-row"><span>Revenue</span><span style="color:var(--red);">$150,673.25</span></div>
+        <div class="yoy-row"><span>Total quotes</span><span style="color:var(--red);">380</span></div>
+        <div class="yoy-row"><span>Orders converted</span><span style="color:var(--red);">153</span></div>
+        <div class="yoy-row"><span>Conversion rate</span><span style="color:var(--red);">40.00%</span></div>
+        <div class="yoy-row"><span>Avg order value</span><span style="color:var(--red);">$984.79</span></div>
+        <div class="yoy-row"><span>Top CSR</span><span>Harris — $45,107</span></div>
+        <div class="yoy-row"><span>Best store</span><span>FP — 66.67%</span></div>
+        <div class="yoy-highlight-bad">
+          <div class="yoy-h-label-bad">Revenue gap</div>
+          <div class="yoy-h-val-bad">-$52,178</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:1.5rem;">
+      <div class="chart-title">Year-over-year — all key metrics</div>
+      <div class="chart-sub">March 2025 vs March 2026 side-by-side</div>
+      <div class="legend-row" style="margin-top:0.75rem;">
+        <span><span class="lsq" style="background:#d3d1c7;"></span>March 2025</span>
+        <span><span class="lsq" style="background:#0d5c32;"></span>March 2026</span>
+      </div>
+      <div style="position:relative; height:240px;">
+        <canvas id="yoyChart" role="img" aria-label="YoY comparison chart">YoY data.</canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">CSR comparison — March 2025 vs March 2026</div>
+      <div class="chart-sub">CSRs present in both periods</div>
+      <div class="legend-row" style="margin-top:0.75rem;">
+        <span><span class="lsq" style="background:#d3d1c7;"></span>Mar 2025</span>
+        <span><span class="lsq" style="background:#1a8c4e;"></span>Mar 2026</span>
+      </div>
+      <div style="position:relative; height:280px;">
+        <canvas id="csrYoyChart" role="img" aria-label="CSR YoY comparison">CSR YoY.</canvas>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="page-footer">
+  <div class="page-footer-inner">
+    <div class="footer-sig"><strong>Ryan Soto</strong> &nbsp;|&nbsp; Assistant Manager, Sales &nbsp;|&nbsp; Faya Corporation &nbsp;|&nbsp; <a href="http://fayapromo.com/" style="color:var(--green-dark);">fayapromo.com</a></div>
+    <div class="footer-date">Report generated: April 2026</div>
+  </div>
+</footer>
+
+<script>
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+const csrData = [
+  { name: 'Harris', val: 45106.96, q: 94,   conv: '40.78%', color: '#0d5c32' },
+  { name: 'Evan',   val: 30693.12, q: 99,   conv: '48.19%', color: '#1a8c4e' },
+  { name: 'Hash',   val: 27238.58, q: null, conv: '—',       color: '#2ecc71' },
+  { name: 'Diana',  val: 15264.54, q: null, conv: '—',       color: '#9ec9f5' },
+  { name: 'Ryan',   val: 14029.05, q: null, conv: '—',       color: '#378add' },
+  { name: 'Andie',  val: 11397.18, q: 87.5, conv: '48.19%', color: '#1a5fa8' },
+  { name: 'John',   val: 244.80,   q: null, conv: '—',       color: '#b4b2a9' },
+];
+const maxVal = csrData[0].val;
+const totalRev = csrData.reduce((s,c) => s+c.val, 0);
+
+const barContainer = document.getElementById('csrBars');
+csrData.forEach(c => {
+  const pct = (c.val / maxVal * 100).toFixed(1);
+  const fmtVal = '$' + c.val.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
+  const qLabel = c.q
+    ? `<span class="csr-badge" style="background:#e6f4ec;color:#0d5c32;">Q ${c.q}</span>`
+    : `<span class="csr-badge" style="background:#f1efe8;color:#8a9688;">N/A</span>`;
+  barContainer.innerHTML += `<div class="csr-item">
+    <span class="csr-name">${c.name}</span>
+    <div class="csr-bar-bg"><div class="csr-bar-fill" style="width:${pct}%;background:${c.color};"></div></div>
+    <span class="csr-amt">${fmtVal}</span>
+    ${qLabel}
+  </div>`;
+});
+
+const csrLegendEl = document.getElementById('csrLegend');
+csrData.forEach(c => {
+  const sharePct = ((c.val / totalRev) * 100).toFixed(1);
+  csrLegendEl.innerHTML += `<div style="display:flex;align-items:center;gap:7px;"><span style="width:10px;height:10px;border-radius:2px;background:${c.color};flex-shrink:0;display:inline-block;"></span><span style="color:#4a5249;">${c.name}</span><span style="margin-left:auto;font-variant-numeric:tabular-nums;color:#1a1f1a;font-weight:500;">${sharePct}%</span></div>`;
+});
+
+const gC = 'rgba(0,0,0,0.06)';
+const tC = '#8a9688';
+const tF = { size: 11, family: 'DM Sans, sans-serif' };
+
+new Chart(document.getElementById('revChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Mar 2025','Jan 2026','Feb 2026','Mar 2026'],
+    datasets: [{ data: [202851.84,171648.68,109000,150673.25], backgroundColor: ['#d3d1c7','#9ec9f5','#9ec9f5','#0d5c32'], borderRadius: 5 }]
+  },
+  options: { responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{callbacks:{label: ctx=>' $'+ctx.parsed.y.toLocaleString('en-US',{maximumFractionDigits:0})}} },
+    scales:{ y:{ticks:{color:tC,font:tF,callback:v=>'$'+(v/1000).toFixed(0)+'K'},grid:{color:gC}}, x:{ticks:{color:tC,font:tF},grid:{display:false}} }
+  }
+});
+
+new Chart(document.getElementById('convChart'), {
+  type: 'line',
+  data: {
+    labels: ['Mar 2025','Jan 2026','Mar 2026'],
+    datasets: [{ data:[45.50,35.05,40.00], borderColor:'#1a8c4e', backgroundColor:'#1a8c4e', pointBackgroundColor:'#1a8c4e', pointRadius:6, tension:0.3, borderWidth:2.5 }]
+  },
+  options: { responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y.toFixed(2)+'%'}} },
+    scales:{ y:{min:25,max:55,ticks:{color:tC,font:tF,callback:v=>v+'%'},grid:{color:gC}}, x:{ticks:{color:tC,font:tF},grid:{display:false}} }
+  }
+});
+
+new Chart(document.getElementById('aovBar'), {
+  type: 'bar',
+  data: {
+    labels: ['Mar 2025','Mar 2026'],
+    datasets: [{ data:[1040.27,984.79], backgroundColor:['#d3d1c7','#0d5c32'], borderRadius:5 }]
+  },
+  options: { responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toFixed(2)}} },
+    scales:{ y:{min:900,max:1100,ticks:{color:tC,font:tF,callback:v=>'$'+v},grid:{color:gC}}, x:{ticks:{color:tC,font:tF},grid:{display:false}} }
+  }
+});
+
+new Chart(document.getElementById('sparkChart'), {
+  type: 'line',
+  data: {
+    labels: ['January','February','March'],
+    datasets: [{ data:[171648.68,109000,150673.25], borderColor:'#0d5c32', backgroundColor:'rgba(13,92,50,0.07)', pointBackgroundColor:'#0d5c32', pointRadius:5, tension:0.35, borderWidth:2.5, fill:true }]
+  },
+  options: { responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString('en-US',{maximumFractionDigits:0})}} },
+    scales:{ y:{ticks:{color:tC,font:tF,callback:v=>'$'+(v/1000).toFixed(0)+'K'},grid:{color:gC}}, x:{ticks:{color:tC,font:tF},grid:{display:false}} }
+  }
+});
+
+new Chart(document.getElementById('csrDoughnut'), {
+  type: 'doughnut',
+  data: {
+    labels: csrData.map(c=>c.name),
+    datasets:[{ data:csrData.map(c=>c.val), backgroundColor:csrData.map(c=>c.color), borderWidth:2, borderColor:'#fff' }]
+  },
+  options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+    plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.toLocaleString('en-US',{maximumFractionDigits:0})}} }
+  }
+});
+
+new Chart(document.getElementById('storeBar'), {
+  type: 'bar',
+  data: {
+    labels: ['CB','SB','FP','YA'],
+    datasets:[
+      { label:'Quotes', data:[217,110,24,23], backgroundColor:'#9ec9f5', borderRadius:4 },
+      { label:'Orders', data:[103,39,16,4],   backgroundColor:'#0d5c32', borderRadius:4 },
+    ]
+  },
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{ y:{ticks:{color:tC,font:tF},grid:{color:gC}}, x:{ticks:{color:tC,font:tF},grid:{display:false}} }
+  }
+});
+
+new Chart(document.getElementById('storeConv'), {
+  type: 'bar',
+  data: {
+    labels: ['FP','CB','SB','YA'],
+    datasets:[{ data:[66.67,47.47,35.45,17.39], backgroundColor:['#0d5c32','#1a8c4e','#e07b10','#c0392b'], borderRadius:5 }]
+  },
+  options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.x.toFixed(2)+'%'}}},
+    scales:{ x:{min:0,max:80,ticks:{color:tC,font:tF,callback:v=>v+'%'},grid:{color:gC}}, y:{ticks:{color:tC,font:tF},grid:{display:false}} }
+  }
+});
+
+new Chart(document.getElementById('yoyChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Revenue','Quotes','Orders','Conv. Rate %','Avg Order Value'],
+    datasets:[
+      { label:'Mar 2025', data:[202851.84,428,195,45.50,1040.27], backgroundColor:'#d3d1c7', borderRadius:4 },
+      { label:'Mar 2026', data:[150673.25,380,153,40.00,984.79],  backgroundColor:'#0d5c32', borderRadius:4 },
+    ]
+  },
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>{
+      const i=ctx.dataIndex, v=ctx.parsed.y;
+      if(i===0) return ' $'+v.toLocaleString('en-US',{maximumFractionDigits:0});
+      if(i===3) return ' '+v.toFixed(2)+'%';
+      if(i===4) return ' $'+v.toFixed(2);
+      return ' '+v;
+    }}}},
+    scales:{ y:{display:false}, x:{ticks:{color:tC,font:tF},grid:{display:false}} }
+  }
+});
+
+new Chart(document.getElementById('csrYoyChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Harris','Evan','Hash','Diana'],
+    datasets:[
+      { label:'Mar 2025', data:[23944.53,12433.41,62644.79,45211.67], backgroundColor:'#d3d1c7', borderRadius:4 },
+      { label:'Mar 2026', data:[45106.96,30693.12,27238.58,15264.54], backgroundColor:'#1a8c4e', borderRadius:4 },
+    ]
+  },
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString('en-US',{maximumFractionDigits:0})}}},
+    scales:{ y:{ticks:{color:tC,font:tF,callback:v=>'$'+(v/1000).toFixed(0)+'K'},grid:{color:gC}}, x:{ticks:{color:tC,font:tF},grid:{display:false}} }
+  }
+});
+</script>
+</body>
+</html>
